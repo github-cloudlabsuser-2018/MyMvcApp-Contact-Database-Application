@@ -1,0 +1,112 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+      "appServicePlanName": {
+        "type": "string",
+        "metadata": {
+          "description": "Name of the App Service Plan"
+        }
+      },
+      "webAppName": {
+        "type": "string",
+        "metadata": {
+          "description": "Name of the Web App"
+        }
+      },
+      "sqlServerName": {
+        "type": "string",
+        "metadata": {
+          "description": "Name of the SQL Server"
+        }
+      },
+      "sqlDatabaseName": {
+        "type": "string",
+        "metadata": {
+          "description": "Name of the SQL Database"
+        }
+      },
+      "location": {
+        "type": "string",
+        "metadata": {
+          "description": "Location for all resources"
+        }
+      },
+      "sqlAdminUsername": {
+        "type": "string",
+        "metadata": {
+          "description": "SQL Server admin username"
+        }
+      },
+      "sqlAdminPassword": {
+        "type": "securestring",
+        "metadata": {
+          "description": "SQL Server admin password"
+        }
+      }
+    },
+    "resources": [
+      {
+        "type": "Microsoft.Web/serverfarms",
+        "apiVersion": "2021-02-01",
+        "name": "[parameters('appServicePlanName')]",
+        "location": "[parameters('location')]",
+        "sku": {
+          "name": "F1",
+          "tier": "Free"
+        },
+        "properties": {}
+      },
+      {
+        "type": "Microsoft.Web/sites",
+        "apiVersion": "2021-02-01",
+        "name": "[parameters('webAppName')]",
+        "location": "[parameters('location')]",
+        "dependsOn": [
+          "[resourceId('Microsoft.Web/serverfarms', parameters('appServicePlanName'))]"
+        ],
+        "properties": {
+          "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', parameters('appServicePlanName'))]"
+        }
+      },
+      {
+        "type": "Microsoft.Sql/servers",
+        "apiVersion": "2021-02-01",
+        "name": "[parameters('sqlServerName')]",
+        "location": "[parameters('location')]",
+        "properties": {
+          "administratorLogin": "[parameters('sqlAdminUsername')]",
+          "administratorLoginPassword": "[parameters('sqlAdminPassword')]"
+        },
+        "resources": [
+          {
+            "type": "databases",
+            "apiVersion": "2021-02-01",
+            "name": "[parameters('sqlDatabaseName')]",
+            "location": "[parameters('location')]",
+            "sku": {
+              "name": "S0",
+              "tier": "Standard"
+            },
+            "properties": {
+              "collation": "SQL_Latin1_General_CP1_CI_AS"
+            }
+          }
+        ]
+      }
+    ],
+    "outputs": {
+      "webAppUrl": {
+        "type": "string",
+        "value": "[reference(resourceId('Microsoft.Web/sites', parameters('webAppName'))).defaultHostName]"
+      },
+      "sqlServerName": {
+        "type": "string",
+        "value": "[parameters('sqlServerName')]"
+      },
+      "sqlDatabaseName": {
+        "type": "string",
+        "value": "[parameters('sqlDatabaseName')]"
+      }
+    }
+  }
